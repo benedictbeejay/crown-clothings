@@ -1,89 +1,97 @@
-import React from 'react'
-import { useState } from 'react';
-import { createAuthUserWithEmailAndPassword } from '../../utils/firebase/firebase.utils';
-import { eventWrapper } from '@testing-library/user-event/dist/utils';
+// sign-up-form.component.jsx
+import React, { useState } from 'react';
+import './sign-up-form.styles.scss';
+import { createAuthUserWithEmailAndPassword, createUserDocumentFromAuth } from '../../utils/firebase/firebase.utils';
+import Button from '../button/button.component';
+import FormInput from '../form-input/form-input.component';
 
 const defaultFormFields = {
   displayName: '',
   email: '',
   password: '',
-  confirmPassword: '',
-}
+  confirmPassword: ''
+};
 
 const SignUpForm = () => {
-
   const [formFields, setFormFields] = useState(defaultFormFields);
-  const { displayName, email, password, confirmPassword} = formFields;
+  const { displayName, email, password, confirmPassword } = formFields;
 
-  console.log(formFields);
+  const resetFormFields = () => {
+    setFormFields(defaultFormFields);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (password !== confirmPassword) {
-      alert('passwords do not match');
+      alert('Passwords do not match');
       return;
     }
+
     try {
-      const response = await createAuthUserWithEmailAndPassword(email, password)
-      console.log(response);
-    } catch(error) {
-        console.log('user created encountered an error', error);
+      const { user } = await createAuthUserWithEmailAndPassword(email, password);
+      await createUserDocumentFromAuth(user, { displayName });
+      resetFormFields();
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        alert('Email is already in use');
+      } else {
+        console.error('Error creating user:', error);
+      }
     }
-  }
+  };
 
   const handleChange = (event) => {
-      const {name, value} = event.target;
-      setFormFields({...formFields, [name]: value});
+    const { name, value } = event.target;
+    setFormFields({ ...formFields, [name]: value });
   };
+
   return (
-    <div>
-      
-      <h1>
-        sign up with your email and password
-      </h1>
+    <div className='sign-up-container'>
+      <h2>Don't have an account?</h2>
+      <span>Sign up with your email and password</span>
 
       <form onSubmit={handleSubmit}>
-        <label>Display Name</label>
-        <input 
-        type='text'
-        required 
-        name='displayName' 
-        value={displayName}
-        onChange={handleChange}
+        <FormInput
+          label='Display Name'
+          type='text'
+          required
+          name='displayName'
+          value={displayName}
+          onChange={handleChange}
         />
 
-         <label>Email</label>
-        <input 
-        type='email' 
-        required 
-        name='email' 
-        value={email}
-        onChange={handleChange}
+        <FormInput
+          label='Email'
+          type='email'
+          required
+          name='email'
+          value={email}
+          onChange={handleChange}
         />
 
-         <label>Password</label>
-        <input 
-        type='password' 
-        required 
-        name='password' 
-        value={password}
-        onChange={handleChange}
+        <FormInput
+          label='Password'
+          type='password'
+          required
+          name='password'
+          value={password}
+          onChange={handleChange}
         />
 
-         <label>Confirm Password</label>
-        <input 
-        type='password' 
-        required 
-        name='confirmPassword' 
-        value={confirmPassword}
-        onChange={handleChange}
+        <FormInput
+          label='Confirm Password'
+          type='password'
+          required
+          name='confirmPassword'
+          value={confirmPassword}
+          onChange={handleChange}
         />
 
-        <button type='submit'>Sign Up</button>
+        <Button type='submit'>Sign Up</Button>
       </form>
     </div>
-  )
-}
+  );
+};
 
-export default SignUpForm
+export default SignUpForm;
